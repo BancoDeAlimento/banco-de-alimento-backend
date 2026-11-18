@@ -80,6 +80,7 @@ Usamos o **H2**, um banco em memória, para desenvolvimento e demonstração. Os
 |---|---|---|
 | GET | `/api/...` | A definir |
 | POST | `/api/...` | A definir |
+| POST | `/doacoes` | Registra uma doação (público) |
 
 ## Como o frontend se comunica com o backend
 
