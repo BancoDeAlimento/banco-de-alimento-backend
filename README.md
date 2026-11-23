@@ -81,7 +81,7 @@ Usamos o **H2**, um banco em memória, para desenvolvimento e demonstração. Os
 | GET | `/api/...` | A definir |
 | POST | `/api/...` | A definir |
 | POST | `/doacoes` | Registra uma doação (público) |
-
+| GET | `/api/impacto` | Retorna o total de impacto em quilogramas (público) |
 ## Como o frontend se comunica com o backend
 
 O frontend em Angular roda em `http://localhost:4200` e chama a API em `http://localhost:8080` usando requisições HTTP (`HttpClient`). Os dados mostrados na tela vêm das respostas JSON dos endpoints acima.
