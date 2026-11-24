@@ -38,6 +38,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
+import org.springframework.http.HttpHeaders;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+
+
 @SpringBootTest
 class PedidosApiTest {
 
@@ -118,6 +128,7 @@ class PedidosApiTest {
 
 
 
+
     @Test
     void camposObrigatoriosSaoApenasOMinimo() throws Exception {
 
@@ -126,14 +137,29 @@ class PedidosApiTest {
                         .content("{}"))
 
                 .andExpect(status().isBadRequest())
+
+                // Confirma o formato Problem Details
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.parseMediaType("application/problem+json")
+                ))
+
+                // Confirma os dados gerais do erro
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.detail")
+                        .value("Há campos inválidos na requisição."))
+
+                // Confirma os campos obrigatórios
                 .andExpect(jsonPath("$.erros.nomeOuApelido").exists())
                 .andExpect(jsonPath("$.erros.bairroOuReferencia").exists())
                 .andExpect(jsonPath("$.erros.numPessoas").exists())
                 .andExpect(jsonPath("$.erros.consentimentoLgpd").exists())
+
+                // Confirma os campos opcionais
                 .andExpect(jsonPath("$.erros.cpf").doesNotExist())
                 .andExpect(jsonPath("$.erros.nis").doesNotExist())
                 .andExpect(jsonPath("$.erros.contato").doesNotExist());
     }
+
 
 
 
@@ -427,4 +453,67 @@ class PedidosApiTest {
     private static String basic(String email, String senha) {
         return "Basic " + Base64.getEncoder().encodeToString((email + ":" + senha).getBytes(StandardCharsets.UTF_8));
     }
+
+
+    @Test
+    void devePermitirCorsDoAngular() throws Exception {
+
+        mvc.perform(options("/pedidos")
+                        .header(
+                                HttpHeaders.ORIGIN,
+                                "http://localhost:4200"
+                        )
+                        .header(
+                                HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD,
+                                "POST"
+                        )
+                        .header(
+                                HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS,
+                                "content-type"
+                        ))
+
+                .andExpect(status().isOk())
+
+                .andExpect(header().string(
+                        HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN,
+                        "http://localhost:4200"
+                ));
+    }
+
+
+    @Test
+    void deveRejeitarCorsDeOrigemDesconhecida() throws Exception {
+
+        mvc.perform(options("/pedidos")
+                        .header(
+                                HttpHeaders.ORIGIN,
+                                "http://site-nao-autorizado.example"
+                        )
+                        .header(
+                                HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD,
+                                "POST"
+                        ))
+
+                .andExpect(status().isForbidden());
+    }
+
+
+    @Test
+    void deveTratarJsonMalformado() throws Exception {
+
+        mvc.perform(post("/pedidos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{json-invalido"))
+
+                .andExpect(status().isBadRequest())
+
+                .andExpect(jsonPath("$.status").value(400))
+
+                .andExpect(jsonPath("$.detail")
+                        .value(
+                                "Requisição inválida: confira o formato e os valores enviados."
+                        ));
+    }
+
+
 }
