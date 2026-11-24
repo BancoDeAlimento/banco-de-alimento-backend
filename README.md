@@ -12,9 +12,12 @@ O Banco de Alimento conecta quem tem alimentos para doar com quem precisa recebe
 
 ### Funcionalidades
 
-- [ ] A definir (exemplo: cadastrar doação)
-- [ ] A definir (exemplo: listar alimentos disponíveis)
-- [ ] A definir (exemplo: registrar retirada)
+- [x] Cadastro e consulta de solicitações de alimentos por código
+- [x] Cadastro público de doações
+- [x] Pré-cadastro de entidades
+- [x] Indicador de impacto configurável para demonstração
+- [x] Rotas internas de triagem e administração (protegidas)
+- [ ] Controle de estoque e distribuição de alimentos (etapa futura)
 
 ## Integrantes
 
@@ -32,8 +35,8 @@ O Banco de Alimento conecta quem tem alimentos para doar com quem precisa recebe
 
 | Tecnologia | Versão |
 |---|---|
-| Java (JDK) | 25 |
-| Spring Boot | 4.1.x (conferir a versão exata no `pom.xml`) |
+| Java (JDK) | 21 |
+| Spring Boot | 4.1.0 |
 | Maven | via Maven Wrapper (`mvnw`) |
 | Spring Web | incluído no Spring Boot |
 | Spring Data JPA | incluído no Spring Boot |
@@ -42,7 +45,7 @@ O Banco de Alimento conecta quem tem alimentos para doar com quem precisa recebe
 
 ## Pré-requisitos
 
-- Java 25 instalado. Para conferir, rode `java -version`
+- Java 21 instalado. Para conferir, rode `java -version`
 - Git
 
 Não precisa instalar Maven nem banco de dados. O Maven Wrapper vem no projeto e o H2 roda dentro da aplicação.
@@ -70,24 +73,68 @@ Não precisa instalar Maven nem banco de dados. O Maven Wrapper vem no projeto e
 
 ## Banco de dados
 
-Usamos o **H2**, um banco em memória, para desenvolvimento e demonstração. Os dados são apagados quando a aplicação é encerrada.
+Utilizamos o **H2** no ambiente de desenvolvimento. O perfil `dev` está configurado em `src/main/resources/application-dev.properties` para persistir dados no diretório local `./data/`, que não deve ser versionado. Os dados **não são apagados automaticamente** ao encerrar a aplicação. Para os testes, aplica-se a configuração de banco específica do ambiente de teste.
 
 ## Endpoints
 
-> **A definir pelo time:** preencher a tabela conforme os endpoints forem criados.
+URL base local: `http://localhost:8080`.
+
+### Públicos
 
 | Método | Rota | Descrição |
 |---|---|---|
-| GET | `/api/...` | A definir |
-| POST | `/api/...` | A definir |
-| POST | `/doacoes` | Registra uma doação (público) |
-| GET | `/api/impacto` | Retorna o total de impacto em quilogramas (público) |
-| POST | `/entidades` | Pré-cadastro de OSC ou cozinha solidária (público) |
+| POST | `/pedidos` | Cria solicitação de alimentos, retornando código de acompanhamento |
+| GET | `/pedidos/{codigo}` | Consulta o andamento de uma solicitação pelo código |
+| POST | `/doacoes` | Registra uma doação |
+| POST | `/entidades` | Realiza pré-cadastro de entidade |
+| GET | `/api/impacto` | Retorna o indicador de impacto configurado para o MVP |
+
+### Internos, exigem autenticação e autorização
+
+| Método | Rota | Descrição |
+|---|---|---|
+| GET | `/equipe/pedidos` | Lista e filtra solicitações |
+| GET | `/equipe/pedidos/{id}` | Detalha solicitação |
+| PATCH | `/equipe/pedidos/{id}` | Atualiza atendimento |
+| POST | `/equipe/pedidos/{id}/cadunico/verificar` | Registra verificação administrativa |
+| POST | `/equipe/usuarios` | Cadastra usuário da equipe |
+| GET | `/equipe/usuarios` | Lista usuários da equipe |
+| PATCH | `/equipe/usuarios/{id}/ativo` | Ativa ou desativa usuário |
+| GET | `/equipe/auditoria` | Consulta auditoria |
+
+### Tratamento de erros
+
+A API retorna erros no formato `application/problem+json`. Erros de validação (`Bean Validation`) possuem um mapa `erros` com o nome de cada campo inválido e sua mensagem. Exemplo ilustrativo de resposta HTTP 400:
+
+```json
+{
+  "status": 400,
+  "detail": "Há campos inválidos na requisição.",
+  "erros": {
+    "nomeOuApelido": "Informe seu nome ou apelido."
+  }
+}
+```
+
+Os dados de CPF e NIS não são obrigatórios na criação de pedidos. A API não deve incluí-los nas respostas públicas.
+
+### Indicador de impacto
+
+`GET /api/impacto` usa `app.impacto.total-kg`, configurado para demonstração. O valor **não deve ser apresentado como estatística oficial** sem validação da equipe responsável.
+
 ## Como o frontend se comunica com o backend
 
 O frontend em Angular roda em `http://localhost:4200` e chama a API em `http://localhost:8080` usando requisições HTTP (`HttpClient`). Os dados mostrados na tela vêm das respostas JSON dos endpoints acima.
 
-Como as duas aplicações rodam em portas diferentes, o backend precisa liberar o **CORS** para a origem `http://localhost:4200`.
+O backend permite CORS para os endpoints públicos de pedidos, doações, entidades e impacto somente a partir da origem `http://localhost:4200` por padrão. É possível alterá-la com a variável `APP_CORS_ALLOWED_ORIGIN`. Os endpoints administrativos não estão incluídos nessa liberação. CORS não substitui autenticação nem autorização.
+
+Para testar a integração real, execute o Angular em `http://localhost:4200` e verifique as requisições na aba Network do navegador. Para testar somente o preflight de `POST /doacoes`, use:
+
+```bash
+curl -i -X OPTIONS http://localhost:8080/doacoes -H "Origin: http://localhost:4200" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: content-type"
+```
+
+Execute `./mvnw clean verify` no Linux/macOS ou `mvnw.cmd clean verify` no Windows para executar a suíte de testes antes do Pull Request.
 
 ## Como contribuir
 
