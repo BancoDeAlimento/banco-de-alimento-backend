@@ -3,7 +3,6 @@ package br.recife.bancodealimentos.config;
 
 import br.recife.bancodealimentos.seguranca.AutenticacaoInterceptor;
 import br.recife.bancodealimentos.seguranca.LimiteRequisicoesInterceptor;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
