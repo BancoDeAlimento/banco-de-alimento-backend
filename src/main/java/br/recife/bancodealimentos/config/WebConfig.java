@@ -20,7 +20,8 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(limite)
-                .addPathPatterns("/pedidos", "/pedidos/**", "/doacoes", "/doacoes/**", "/equipe/**")
+                .addPathPatterns("/pedidos", "/pedidos/**", "/doacoes", "/doacoes/**",
+                        "/entidades", "/entidades/**", "/equipe/**")
                 .order(0);
         registry.addInterceptor(autenticacao)
                 .addPathPatterns("/equipe/**")
