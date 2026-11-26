@@ -1,0 +1,20 @@
+# Maven
+target/
+
+# Banco H2 local de desenvolvimento
+data/
+*.mv.db
+*.trace.db
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+
+# Postman local (a pasta postman/ pode ter coleção compartilhada: decidam antes de ignorar)
+.postman/
+
+# Segredos e sistema operacional
+.env
+.DS_Store
+Thumbs.db
